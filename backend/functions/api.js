@@ -3,7 +3,7 @@ import serverless from 'serverless-http'
 import { connectToDatabase } from '../database/connect.js'
 
 // Choose an existing collection and a string field to use for searching.
-const collectionName = 'movies'
+const collectionName = 'restaurants'
 
 export const app = express()
 const router = express.Router()
@@ -19,23 +19,29 @@ router.get('/items', async (req, res) => {
 })
 
 // Search using a case-insensitive, literal substring.
-router.get('/search', async (req, res) => {
-    const terms = req.query.terms ?? ''
-    
-    if (typeof terms !== 'string') {
-        return res.status(400).json({ error: 'Search terms must be a string' })
+function escapeRegex(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+router.get('/restaurants', async (req, res) => {
+    const { cuisine } = req.query
+
+    if (typeof cuisine !== 'string' || !cuisine.trim()) {
+        return res.status(400).json({ error: 'Provide a cuisine to search for' })
     }
- 
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/RegExp
 
     const db = await connectToDatabase()
     const items = await db.collection(collectionName)
-        .find({ 
-            // title: terms
-            title: RegExp(terms , 'i')   // JavaScript RegExp syntax is supported by MongoDB
-        }) 
+        .find({
+            cuisine: {
+                $regex: `^${escapeRegex(cuisine.trim())}$`,
+                $options: 'i'
+            }
+        })
+        .project({ _id: 0, name: 1, address: 1 })
         .limit(10)
         .toArray()
+
     res.json(items)
 })
   
