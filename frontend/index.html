@@ -27,8 +27,12 @@
   </main>
   <footer>
     <h2>Endpoints</h2>
-    <a href="/api/items">/items</a>
-    <a href="/api/search?terms=titanic">/search?terms=titanic</a>
+<form id="search-form">
+  <label for="cuisine">Cuisine</label>
+  <input id="cuisine" name="cuisine" required>
+  <button type="submit">Search</button>
+</form>
+<div id="content" role="status"></div>
   </footer>
   <script src="script.js"></script>
 </body>
