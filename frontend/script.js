@@ -1,33 +1,38 @@
 // Fetch items from the API and populate the content div.
-const getData = async () => {
-    const content = document.querySelector('#content')
+const form = document.querySelector('#search-form')
+const content = document.querySelector('#content')
+
+form.addEventListener('submit', async (event) => {
+    event.preventDefault()
+
+    const cuisine = new FormData(form).get('cuisine')
+    content.textContent = 'Searching…'
 
     try {
-        const response = await fetch('/api/items')
-        if (!response.ok) throw new Error('Unable to load data')
-        const data = await response.json()
+        const response = await fetch(
+            `/api/restaurants?cuisine=${encodeURIComponent(cuisine)}`
+        )
+        if (!response.ok) throw new Error('Unable to search restaurants')
 
+        const restaurants = await response.json()
         content.replaceChildren()
-        const heading = document.createElement('h3')
-        heading.textContent = '✅ MongoDB connected.'
-        content.appendChild(heading)
-        console.log(data)
 
-        if (!data.length) {
-            const notice = document.createElement('p')
-            notice.textContent = 'No documents found. Check the database and collection name.'
-            content.appendChild(notice)
+        if (!restaurants.length) {
+            content.textContent = 'No restaurants found for that cuisine.'
+            return
         }
 
-        data.forEach(item => {
-            const title = document.createElement('p')
-            title.textContent = item.title ?? 'Untitled item'
-            content.appendChild(title)
-        })
+        for (const restaurant of restaurants) {
+            const result = document.createElement('p')
+            const address = typeof restaurant.address === 'string'
+                ? restaurant.address
+                : JSON.stringify(restaurant.address)
+
+            result.textContent = `${restaurant.name ?? 'Unnamed restaurant'} — ${address ?? 'No address'}`
+            content.appendChild(result)
+        }
     } catch (error) {
-        content.textContent = '❌ Unable to load data. Check the database configuration and server logs.'
+        content.textContent = 'Unable to search. Check the database configuration and server logs.'
         console.error(error)
     }
-}
-
-getData()
+})
